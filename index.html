@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SiteSleuth - Website Checker</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f5f7fb;
+    color: #172033;
+}
+
+header {
+    background: white;
+    padding: 22px 8%;
+    border-bottom: 1px solid #ddd;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+header span {
+    color: #315efb;
+}
+
+main {
+    max-width: 850px;
+    margin: 55px auto;
+    padding: 20px;
+}
+
+.hero {
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 42px;
+}
+
+.hero p {
+    color: #687386;
+    line-height: 1.6;
+}
+
+.panel {
+    background: white;
+    padding: 28px;
+    border-radius: 18px;
+    margin-top: 30px;
+    box-shadow: 0 10px 30px #00000008;
+}
+
+.inputrow {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+input {
+    flex: 1;
+    min-width: 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+button {
+    background: #315efb;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 15px 22px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    background: #2148d8;
+}
+
+#result {
+    display: none;
+    margin-top: 25px;
+}
+
+.check {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    margin: 12px 0;
+}
+
+.check b {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.check p {
+    color: #687386;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.good { color: #16845b; }
+.warn { color: #a96608; }
+.bad { color: #c13c45; }
+
+.notice {
+    background: #eef2ff;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+    line-height: 1.6;
+}
+
+footer {
+    text-align: center;
+    padding: 25px;
+    color: #687386;
+}
+
+@media(max-width:600px) {
+    .inputrow {
+        flex-direction: column;
+    }
+
+    .hero h1 {
+        font-size: 32px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    🛡️ Site<span>Sleuth</span>
+</header>
+
+<main>
+
+<section class="hero">
+    <h1>Is this website genuine?</h1>
+
+    <p>
+        Check whether a website looks genuine or suspicious.
+        Enter a website URL and discover possible warning signs.
+    </p>
+</section>
+
+<section class="panel">
+
+    <h3>Enter Website URL</h3>
+
+    <div class="inputrow">
+
+        <input
+            type="text"
+            id="url"
+            placeholder="https://example.com"
+        >
+
+        <button onclick="checkWebsite()">
+            Check Website →
+        </button>
+
+    </div>
+
+    <div id="result">
+
+        <h2 id="verdict"></h2>
+
+        <p id="summary"></p>
+
+        <div id="checks"></div>
+
+        <div class="notice">
+            <b>Safety Tip:</b>
+            Never enter passwords, bank details,
+            OTPs or payment information on a website
+            you do not trust.
+        </div>
+
+    </div>
+
+</section>
+
+</main>
+
+<footer>
+    © 2026 SiteSleuth | Stay Safe Online 🛡️
+</footer>
+
+<script>
+
+function checkWebsite() {
+
+    let url = document.getElementById("url").value.trim();
+
+    let result = document.getElementById("result");
+    let verdict = document.getElementById("verdict");
+    let summary = document.getElementById("summary");
+    let checks = document.getElementById("checks");
+
+    result.style.display = "block";
+    checks.innerHTML = "";
+
+    if (!url) {
+        verdict.innerText = "Enter a website URL";
+        summary.innerText = "Please enter a valid website address.";
+        return;
+    }
+
+    let website;
+
+    try {
+        website = new URL(
+            /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(url)
+            ? url : "https://" + url
+        );
+    } catch {
+        verdict.innerText = "Invalid URL";
+        summary.innerText = "Please check the website address.";
+        return;
+    }
+
+    let domain = website.hostname.toLowerCase();
+    let warnings = 0;
+
+    function addCheck(type, title, description) {
+
+        checks.innerHTML += `
+            <div class="check">
+                <b class="${type}">${title}</b>
+                <p>${description}</p>
+            </div>
+        `;
+
+    }
+
+    // Check HTTPS
+
+    if (website.protocol === "https:") {
+
+        addCheck(
+            "good",
+            "✓ HTTPS Connection",
+            "The website uses an encrypted connection. However, HTTPS does not prove that the website is genuine."
+        );
+
+    } else {
+
+        warnings++;
+
+        addCheck(
+            "bad",
+            "✕ No HTTPS",
+            "This website does not use an encrypted connection. Avoid entering sensitive information."
+        );
+
+    }
+
+    // Check suspicious words
+
+    let suspiciousWords = [
+        "login",
+        "verify",
+        "secure",
+        "account",
+        "update",
+        "bonus",
+        "prize",
+        "payment"
+    ];
+
+    let found = suspiciousWords.filter(word =>
+        domain.split(".").slice(0, -1).join(".").includes(word)
+    );
+
+    if (found.length > 0) {
+
+        warnings++;
+
+        addCheck(
+            "warn",
+            "⚠ Suspicious Words",
+            "The domain contains words such as " +
+            found.join(", ") +
+            ". These can sometimes be used in phishing links."
+        );
+
+    } else {
+
+        addCheck(
+            "good",
+            "✓ No Common Bait Words",
+            "We did not find common suspicious keywords in the domain."
+        );
+
+    }
+
+    // Check long domain
+
+    if (domain.length > 55) {
+
+        warnings++;
+
+        addCheck(
+            "warn",
+            "⚠ Unusually Long Domain",
+            "Long domain names can make the real website address difficult to recognise."
+        );
+
+    } else {
+
+        addCheck(
+            "good",
+            "✓ Domain Length",
+            "The domain length does not appear unusually long."
+        );
+
+    }
+
+    // Check possible brand imitation
+
+    let brands = [
+        "google",
+        "paypal",
+        "amazon",
+        "microsoft",
+        "apple",
+        "netflix",
+        "instagram",
+        "facebook",
+        "phonepe",
+        "paytm"
+    ];
+
+    let labels = domain.split(".");
+
+    let fakeBrand = brands.find(brand =>
+        labels.slice(0, -1).some(label =>
+            label.includes(brand) && label !== brand && label !== "www"
+        )
+    );
+
+    if (fakeBrand) {
+
+        warnings++;
+
+        addCheck(
+            "bad",
+            "✕ Possible Brand Imitation",
+            "The domain contains the brand name " +
+            fakeBrand +
+            " inside a longer address. Verify the official domain independently."
+        );
+
+    } else {
+
+        addCheck(
+            "good",
+            "✓ No Obvious Brand Imitation",
+            "We did not find an obvious brand-name trick."
+        );
+
+    }
+
+    // Final result
+
+    if (warnings >= 3) {
+
+        verdict.innerText = "⚠ Higher Caution";
+
+        summary.innerText =
+            "Several warning signs were detected. Avoid entering personal information.";
+
+    } else if (warnings >= 1) {
+
+        verdict.innerText = "👀 Some Warning Signs";
+
+        summary.innerText =
+            "Some unusual features were detected. Verify this website before using it.";
+
+    } else {
+
+        verdict.innerText = "🔎 Fewer Obvious Warning Signs";
+
+        summary.innerText =
+            "No major warning signs were detected by these basic checks. This does not guarantee safety.";
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
